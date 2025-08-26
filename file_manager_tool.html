@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian Day Tracker</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="Obsidian Day Tracker">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Obsidian Day Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="description" content="Quick daily note creation for Obsidian vault">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E📝%3C/text%3E%3C/svg%3E">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E📝%3C/text%3E%3C/svg%3E">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #f1f5f9;
+        }
+        .container {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #f8fafc;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        input[type="text"], input[type="date"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            background: #334155;
+            color: #f1f5f9;
+        }
+        input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        .tags-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            min-height: 44px;
+            align-items: center;
+            cursor: text;
+            background: #334155;
+        }
+        .tags-input:focus-within {
+            border-color: #3b82f6;
+        }
+        .tag {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .tag-input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            font-size: 14px;
+            background: transparent;
+            color: #f1f5f9;
+        }
+        .tag-input::placeholder {
+            color: #94a3b8;
+        }
+        input::placeholder, textarea::placeholder {
+            color: #94a3b8;
+        }
+        .create-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .create-btn:hover {
+            transform: translateY(-1px);
+        }
+        .create-btn:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            display: none;
+        }
+        .success {
+            background: #064e3b;
+            color: #a7f3d0;
+            border: 1px solid #065f46;
+        }
+        .error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+        }
+        .generated-title {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #475569;
+            border: 1px solid #64748b;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .preview {
+            background: #334155;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 12px;
+            color: #e2e8f0;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #475569;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: #334155;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            margin-right: 4px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .tab:hover {
+            background: #475569;
+            color: #f1f5f9;
+        }
+        .tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .settings-group {
+            margin-bottom: 25px;
+        }
+        .settings-group h3 {
+            color: #f8fafc;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .save-settings-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .save-settings-btn:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Obsidian Day Tracker</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('create')">Create Note</button>
+            <button class="tab" onclick="switchTab('settings')">Settings</button>
+        </div>
+
+        <div id="createTab" class="tab-content active">
+            <form id="noteForm">
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" required placeholder="What did you accomplish?">
+                <div id="generatedTitle" class="generated-title" style="display: none;"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="type">Type *</label>
+                <select id="type" required>
+                    <option value="">Select type...</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="admin">Admin</option>
+                    <option value="support">Support</option>
+                    <option value="projects">Projects</option>
+                    <option value="personal">Personal</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date *</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="tldr">TL;DR *</label>
+                <input type="text" id="tldr" required placeholder="One sentence summary">
+                <div class="help-text">Brief summary of what was accomplished</div>
+            </div>
+
+            <div class="form-group">
+                <label>Tags</label>
+                <div class="tags-input" id="tagsContainer">
+                    <input type="text" class="tag-input" id="tagInput" placeholder="Type tag and press Enter">
+                </div>
+                <div class="help-text">Press Enter to add tags</div>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Additional Content (Optional)</label>
+                <textarea id="content" placeholder="Any additional details, notes, or context..."></textarea>
+            </div>
+
+                <button type="submit" class="create-btn">Create Note</button>
+            </form>
+
+            <div id="preview" class="preview" style="display: none;"></div>
+            <div id="output" class="output"></div>
+        </div>
+
+        <div id="settingsTab" class="tab-content">
+            <div class="settings-group">
+                <h3>File Storage Settings</h3>
+                <div class="form-group">
+                    <label for="notesPath">Notes Directory Path *</label>
+                    <input type="text" id="notesPath" required placeholder="/path/to/your/obsidian/vault/notes">
+                    <div class="help-text">Full path to the directory where notes should be saved</div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Server Settings</h3>
+                <div class="form-group">
+                    <label for="serverUrl">Server URL</label>
+                    <input type="text" id="serverUrl" placeholder="http://localhost:5555">
+                    <div class="help-text">Backend server URL (leave empty for default)</div>
+                </div>
+            </div>
+
+            <button onclick="saveSettings()" class="save-settings-btn">Save Settings</button>
+            <div id="settingsOutput" class="output"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global settings
+        let serverUrl = 'http://localhost:5555';
+        let notesPath = '';
+
+        // Set today's date as default and update generated title
+        document.getElementById('date').valueAsDate = new Date();
+        updateGeneratedTitle();
+        loadSettings();
+
+        // Tags functionality
+        const tagsContainer = document.getElementById('tagsContainer');
+        const tagInput = document.getElementById('tagInput');
+        let tags = [];
+
+        tagInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag();
+            } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
+                removeTag(tags.length - 1);
+            }
+        });
+
+        tagsContainer.addEventListener('click', function() {
+            tagInput.focus();
+        });
+
+        function addTag() {
+            const value = tagInput.value.trim();
+            if (value && !tags.includes(value)) {
+                tags.push(value);
+                renderTags();
+                tagInput.value = '';
+            }
+        }
+
+        function removeTag(index) {
+            tags.splice(index, 1);
+            renderTags();
+        }
+
+        function renderTags() {
+            const existingTags = tagsContainer.querySelectorAll('.tag');
+            existingTags.forEach(tag => tag.remove());
+
+            tags.forEach((tag, index) => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                
+                tagElement.textContent = tag;
+                
+                const removeSpan = document.createElement('span');
+                removeSpan.className = 'tag-remove';
+                removeSpan.textContent = '×';
+                removeSpan.onclick = () => removeTag(index);
+                tagElement.appendChild(removeSpan);
+                
+                tagsContainer.insertBefore(tagElement, tagInput);
+            });
+        }
+
+        // Form submission
+        document.getElementById('noteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await createNote();
+        });
+
+        // Live preview and generated title
+        ['title', 'type', 'date', 'tldr', 'content'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                updatePreview();
+                updateGeneratedTitle();
+            });
+        });
+
+        tagInput.addEventListener('input', updatePreview);
+
+        function updateGeneratedTitle() {
+            const title = document.getElementById('title').value;
+            const date = document.getElementById('date').value;
+            const generatedTitleElement = document.getElementById('generatedTitle');
+            
+            if (title && date) {
+                const filename = `${date} - ${title}.md`;
+                generatedTitleElement.textContent = filename;
+                generatedTitleElement.style.display = 'block';
+            } else {
+                generatedTitleElement.style.display = 'none';
+            }
+        }
+
+        function updatePreview() {
+            const title = document.getElementById('title').value;
+            const type = document.getElementById('type').value;
+            const date = document.getElementById('date').value;
+            const tldr = document.getElementById('tldr').value;
+            const content = document.getElementById('content').value;
+
+            if (!title && !type && !date && !tldr) {
+                document.getElementById('preview').style.display = 'none';
+                return;
+            }
+
+            const frontmatter = generateFrontmatter(type, date, tldr, tags);
+            const preview = frontmatter + (content ? '\n\n' + content : '');
+            
+            document.getElementById('preview').textContent = preview;
+            document.getElementById('preview').style.display = 'block';
+        }
+
+        function generateFrontmatter(type, date, tldr, tags) {
+            let frontmatter = '---\n';
+            frontmatter += `type: ${type}\n`;
+            frontmatter += `date: ${date}\n`;
+            frontmatter += `tldr: ${tldr}\n`;
+            
+            if (tags.length > 0) {
+                frontmatter += 'tags:\n';
+                tags.forEach(tag => {
+                    frontmatter += `  - ${tag}\n`;
+                });
+            } else {
+                frontmatter += 'tags:\n  - \n';
+            }
+            
+            frontmatter += '---';
+            return frontmatter;
+        }
+
+        async function createNote() {
+            const title = document.getElementById('title').value;
+            const type = document.getElementById('type').value;
+            const date = document.getElementById('date').value;
+            const tldr = document.getElementById('tldr').value;
+            const content = document.getElementById('content').value;
+            const output = document.getElementById('output');
+
+            console.log('Creating note with:', { title, type, date, tldr, content, tags });
+
+            if (!title || !type || !date || !tldr) {
+                showOutput('Please fill in all required fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${serverUrl}/api/notes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title,
+                        type,
+                        date,
+                        tldr,
+                        content,
+                        tags,
+                        notesPath: notesPath || undefined
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showOutput(`✅ Successfully created: ${result.filename}\n📁 Location: ${result.filepath}`, 'success');
+                    
+                    // Reset form
+                    document.getElementById('noteForm').reset();
+                    document.getElementById('date').valueAsDate = new Date();
+                    tags = [];
+                    renderTags();
+                    document.getElementById('preview').style.display = 'none';
+                    updateGeneratedTitle();
+                } else {
+                    showOutput(`❌ Error creating note: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error creating note:', error);
+                showOutput(`❌ Error creating note: ${error.message}`, 'error');
+            }
+        }
+
+        function showOutput(message, type) {
+            const output = document.getElementById('output');
+            output.textContent = message;
+            output.className = `output ${type}`;
+            output.style.display = 'block';
+        }
+
+        function showSettingsOutput(message, type) {
+            const output = document.getElementById('settingsOutput');
+            output.textContent = message;
+            output.className = `output ${type}`;
+            output.style.display = 'block';
+        }
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Add active class to selected tab
+            event.target.classList.add('active');
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${serverUrl}/api/settings`);
+                if (response.ok) {
+                    const settings = await response.json();
+                    notesPath = settings.notesPath || '';
+                    document.getElementById('notesPath').value = notesPath;
+                    document.getElementById('serverUrl').value = serverUrl;
+                }
+            } catch (error) {
+                console.log('Could not load settings:', error.message);
+                // Set default values
+                document.getElementById('notesPath').value = notesPath;
+                document.getElementById('serverUrl').value = serverUrl;
+            }
+        }
+
+        async function saveSettings() {
+            const newNotesPath = document.getElementById('notesPath').value.trim();
+            const newServerUrl = document.getElementById('serverUrl').value.trim();
+
+            if (!newNotesPath) {
+                showSettingsOutput('Notes directory path is required', 'error');
+                return;
+            }
+
+            try {
+                // Update server URL if provided
+                if (newServerUrl) {
+                    serverUrl = newServerUrl;
+                }
+
+                // Save settings to backend
+                const response = await fetch(`${serverUrl}/api/settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        notesPath: newNotesPath
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    notesPath = newNotesPath;
+                    
+                    // Save to localStorage for persistence
+                    localStorage.setItem('obsidianTracker_settings', JSON.stringify({
+                        serverUrl,
+                        notesPath
+                    }));
+                    
+                    showSettingsOutput('✅ Settings saved successfully!', 'success');
+                } else {
+                    showSettingsOutput(`❌ Error saving settings: ${result.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showSettingsOutput(`❌ Error saving settings: ${error.message}`, 'error');
+            }
+        }
+
+        // Load settings from localStorage on startup
+        function loadLocalSettings() {
+            const saved = localStorage.getItem('obsidianTracker_settings');
+            if (saved) {
+                try {
+                    const settings = JSON.parse(saved);
+                    if (settings.serverUrl) serverUrl = settings.serverUrl;
+                    if (settings.notesPath) notesPath = settings.notesPath;
+                } catch (error) {
+                    console.log('Could not parse saved settings');
+                }
+            }
+        }
+
+        // Load local settings first, then try to sync with server
+        loadLocalSettings();
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            // Show install button or notification
+            console.log('PWA install prompt available');
+        });
+    </script>
+</body>
+</html>
