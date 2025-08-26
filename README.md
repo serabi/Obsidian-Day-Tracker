@@ -1,6 +1,6 @@
 # Obsidian Day Tracker PWA
 
-A Progressive Web App for quickly creating structured daily notes in your Obsidian vault. Access it instantly with a global hotkey from anywhere on macOS.
+A Progressive Web App for quickly creating structured daily notes in your Obsidian vault. 
 
 ## Quick Start
 
