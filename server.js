@@ -64,6 +64,63 @@ app.get('/api/settings', (req, res) => {
     });
 });
 
+app.get('/api/history', async (req, res) => {
+    try {
+        const targetDir = NOTES_DIR;
+        
+        const files = await fs.readdir(targetDir);
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        const recentFiles = [];
+        
+        for (const filename of files) {
+            if (!filename.endsWith('.md')) continue;
+            
+            const filepath = path.join(targetDir, filename);
+            const stats = await fs.stat(filepath);
+            
+            if (stats.mtime >= oneWeekAgo) {
+                const content = await fs.readFile(filepath, 'utf8');
+                const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+                
+                let metadata = {};
+                if (frontmatterMatch) {
+                    const frontmatterLines = frontmatterMatch[1].split('\n');
+                    frontmatterLines.forEach(line => {
+                        const match = line.match(/^(\w+):\s*(.*)$/);
+                        if (match) {
+                            metadata[match[1]] = match[2];
+                        }
+                    });
+                }
+                
+                recentFiles.push({
+                    filename,
+                    filepath,
+                    created: stats.mtime,
+                    type: metadata.type || 'unknown',
+                    date: metadata.date || '',
+                    tldr: metadata.tldr || ''
+                });
+            }
+        }
+        
+        recentFiles.sort((a, b) => b.created - a.created);
+        
+        res.json({ 
+            success: true, 
+            files: recentFiles
+        });
+
+    } catch (error) {
+        console.error('Error loading history:', error);
+        res.status(500).json({ 
+            error: `Failed to load history: ${error.message}` 
+        });
+    }
+});
+
 app.post('/api/notes', async (req, res) => {
     try {
         const { title, type, date, tldr, content, tags, notesPath } = req.body;

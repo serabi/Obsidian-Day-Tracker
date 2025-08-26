@@ -90,3 +90,6 @@ Thumbs.db
 
 # DynamoDB Local files
 .dynamodb/
+
+# Claude Code configuration
+CLAUDE.md
